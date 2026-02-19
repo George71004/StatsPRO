@@ -137,6 +137,27 @@ class _CompareViewState extends State<CompareView> {
               Text(player1!.name.split(' ')[0], textAlign: TextAlign.center, style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
               Text(player2!.name.split(' ')[0], textAlign: TextAlign.center, style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
             ]),
+            // Comparar nacionalidad
+            if ((player1!.nationality != null && player1!.nationality!.isNotEmpty) || (player2!.nationality != null && player2!.nationality!.isNotEmpty))
+              TableRow(children: [
+                Padding(padding: const EdgeInsets.all(8.0), child: Text("Nacionalidad", style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                Text(player1!.nationality ?? "-", textAlign: TextAlign.center),
+                Text(player2!.nationality ?? "-", textAlign: TextAlign.center),
+              ]),
+            // Comparar altura
+            if (player1!.height != null || player2!.height != null)
+              TableRow(children: [
+                Padding(padding: const EdgeInsets.all(8.0), child: Text("Altura", style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                Text(player1!.height != null ? "${player1!.height!.toStringAsFixed(2)} m" : "-", textAlign: TextAlign.center),
+                Text(player2!.height != null ? "${player2!.height!.toStringAsFixed(2)} m" : "-", textAlign: TextAlign.center),
+              ]),
+            // Comparar pie preferido
+            if ((player1!.preferredFoot != null && player1!.preferredFoot!.isNotEmpty) || (player2!.preferredFoot != null && player2!.preferredFoot!.isNotEmpty))
+              TableRow(children: [
+                Padding(padding: const EdgeInsets.all(8.0), child: Text("Pie preferido", style: const TextStyle(fontSize: 12, color: Colors.grey))),
+                Text(player1!.preferredFoot ?? "-", textAlign: TextAlign.center),
+                Text(player2!.preferredFoot ?? "-", textAlign: TextAlign.center),
+              ]),
             ...keys.map((k) {
               int val1 = _getStatValue(player1!, k);
               int val2 = _getStatValue(player2!, k);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 import './services/players_provider.dart';
 import './models/player_model.dart';
 import './views/compare_view.dart';
@@ -35,8 +36,10 @@ class PlayersListView extends StatelessWidget {
   void _showEditDialog(BuildContext context, Player player) {
     // Inicializamos los controladores con los datos actuales del jugador
     final nameController = TextEditingController(text: player.name);
+    final nationalityController = TextEditingController(text: player.nationality ?? "");
+    final heightController = TextEditingController(text: player.height != null ? player.height!.toStringAsFixed(2) : "");
     String editPos = player.position;
-    
+    String editFoot = player.preferredFoot ?? "Ambos";
     // Cargamos las estadísticas actuales
     Map<String, int> editStats = {
       'vel': player.vel, 'acc': player.acc, 'fon': player.fon, 'pot': player.pot,
@@ -63,8 +66,27 @@ class PlayersListView extends StatelessWidget {
                       const SizedBox(height: 15),
                       DropdownButtonFormField<String>(
                         items: positions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+                        initialValue: editPos,
                         onChanged: (val) => setDialogState(() => editPos = val!),
                         decoration: const InputDecoration(labelText: "Posición"),
+                      ),
+                      const SizedBox(height: 15),
+                      TextField(
+                        controller: nationalityController,
+                        decoration: const InputDecoration(labelText: "Nacionalidad"),
+                      ),
+                      const SizedBox(height: 15),
+                      TextField(
+                        controller: heightController,
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: "Altura (ej: 1.80)"),
+                      ),
+                      const SizedBox(height: 15),
+                      DropdownButtonFormField<String>(
+                        items: ["Izq", "Der", "Ambos"].map((foot) => DropdownMenuItem(value: foot, child: Text(foot))).toList(),
+                        initialValue: editFoot,
+                        onChanged: (val) => setDialogState(() => editFoot = val!),
+                        decoration: const InputDecoration(labelText: "Pie preferido"),
                       ),
                       const Divider(height: 30),
                       ...editStats.keys.map((key) {
@@ -93,21 +115,21 @@ class PlayersListView extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     if (nameController.text.isNotEmpty) {
-                      // Creamos el objeto actualizado
+                      final heightValue = double.tryParse(heightController.text);
                       final updatedPlayer = Player(
-                        id: player.id, // Mantenemos el mismo ID
+                        id: player.id,
                         name: nameController.text,
                         position: editPos,
+                        height: heightValue,
+                        preferredFoot: editFoot,
+                        nationality: nationalityController.text,
                         vel: editStats['vel']!, acc: editStats['acc']!,
                         fon: editStats['fon']!, pot: editStats['pot']!,
                         con: editStats['con']!, pas: editStats['pas']!,
                         dis: editStats['dis']!, ent: editStats['ent']!,
                       );
-
-                      // Llamamos al provider para actualizar y guardar
                       Provider.of<PlayersProvider>(context, listen: false)
                           .updatePlayer(updatedPlayer);
-                      
                       Navigator.pop(context);
                     }
                   },
@@ -146,37 +168,39 @@ class PlayersListView extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
-          child: Wrap(
-            spacing: 8.0,    // Espacio horizontal entre chips
-            runSpacing: 10.0, // Espacio vertical cuando saltan de fila <--- ESTO ES LA CLAVE
-            alignment: WrapAlignment.start, // Alineación al inicio
-            children: filterPositions.map((pos) {
-              bool isSelected = provider.selectedPosition == pos;
-              return ChoiceChip(
-                label: Text(pos),
-                selected: isSelected,
-                onSelected: (selected) {
-                  if (selected) provider.updatePositionFilter(pos);
-                },
-                selectedColor: Colors.greenAccent.withValues(alpha: 0.3),
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.greenAccent : Colors.white,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              );
-            }).toList(),
-          ),
-        ),
+        // El filtro de posiciones ahora será un DropdownButton integrado en la fila de filtros
+        // ...existing code...
         const Divider(), // Separador visual entre filtro de posición y ordenamiento
         // --- FILTROS DE ORDENAMIENTO (Nombre, Promedio, Total) ---
+        const Text("Filtros:", style: TextStyle(fontSize: 15)),
         Padding(
-          padding: const EdgeInsets.only(bottom: 12.0), // <--- ESTO crea el espacio abajo
+          padding: const EdgeInsets.only(bottom: 12.0, top: 4), // <--- ESTO crea el espacio abajo
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
+                // Dropdown de posiciones
+                Container(
+                  height: 35,
+                  margin: const EdgeInsets.only(right: 4.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(7.5),
+                    border: Border.all(color: const Color.fromARGB(255, 59, 59, 59), width: 2),
+                  ),
+                  child: DropdownButton<String>(
+                    value: provider.selectedPosition,
+                    items: filterPositions.map((pos) => DropdownMenuItem(
+                      value: pos,
+                      child: Text(pos, style: TextStyle(color: Color.fromARGB(255, 233, 233, 233), fontSize: 12)),
+                    )).toList(),
+                    onChanged: (value) {
+                      if (value != null) provider.updatePositionFilter(value);
+                    },
+                    underline: SizedBox(),
+                    dropdownColor: const Color.fromARGB(255, 0, 0, 0),
+                  ),
+                ),
                 _filterBtn(context, "Nombre", SortType.nombre, provider),
                 _filterBtn(context, "Promedio", SortType.promedio, provider),
                 _filterBtn(context, "Total Stats", SortType.totalStats, provider),
@@ -205,7 +229,18 @@ class PlayersListView extends StatelessWidget {
                         child: Text(p.position, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
                       ),
                       title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("Promedio: ${p.promedio}, Total stats: ${p.totalStats}", style: TextStyle(color: Colors.white)),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Promedio: ${p.promedio}, Total stats: ${p.totalStats}", style: const TextStyle(color: Colors.white)),
+                          if (p.nationality != null && p.nationality!.isNotEmpty)
+                            Text("Nacionalidad: ${p.nationality}", style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          if (p.height != null)
+                            Text("Altura: ${p.height!.toStringAsFixed(2)} m", style: const TextStyle(color: Colors.white, fontSize: 12)),
+                          if (p.preferredFoot != null && p.preferredFoot!.isNotEmpty)
+                            Text("Pie preferido: ${p.preferredFoot}", style: const TextStyle(color: Colors.white, fontSize: 12)),
+                        ],
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -270,8 +305,10 @@ class CreatePlayerView extends StatefulWidget {
 
 class _CreatePlayerViewState extends State<CreatePlayerView> {
   final nameController = TextEditingController();
-  String selectedPos = 'MC'; // Movido aquí para que sea parte del estado
-  
+  final nationalityController = TextEditingController();
+  final heightController = TextEditingController();
+  String selectedPos = 'MC';
+  String selectedFoot = 'Ambos';
   Map<String, int> stats = {
     'vel': 50, 'acc': 50, 'fon': 50, 'pot': 50,
     'con': 50, 'pas': 50, 'dis': 50, 'ent': 50,
@@ -296,6 +333,33 @@ class _CreatePlayerViewState extends State<CreatePlayerView> {
               decoration: const InputDecoration(labelText: "Posición", border: OutlineInputBorder()),
               items: positions.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
               onChanged: (val) => setState(() => selectedPos = val!),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: nationalityController,
+              decoration: const InputDecoration(
+                labelText: "Nacionalidad",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: heightController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: "Altura (ej: 1.80)",
+                border: OutlineInputBorder(),
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d{0,1}(\.\d{0,2})?')),
+              ],
+            ),
+            const SizedBox(height: 15),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(labelText: "Pie preferido", border: OutlineInputBorder()),
+              initialValue: selectedFoot,
+              items: ["Izq", "Der", "Ambos"].map((foot) => DropdownMenuItem(value: foot, child: Text(foot))).toList(),
+              onChanged: (val) => setState(() => selectedFoot = val!),
             ),
             const SizedBox(height: 20),
             const Text("Estadísticas (0-100)", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -324,13 +388,30 @@ class _CreatePlayerViewState extends State<CreatePlayerView> {
               ),
               onPressed: () {
                 if (nameController.text.isNotEmpty) {
-                  // ORDEN CORRECTO: Nombre, Posición, Stats
+                  // Validación de altura
+                  final heightValue = double.tryParse(heightController.text);
+                  if (heightValue == null || heightValue > 2.5 || heightValue < 1.0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Altura inválida. Debe ser entre 1.00 y 2.50 metros.")),
+                    );
+                    return;
+                  }
                   Provider.of<PlayersProvider>(context, listen: false)
-                      .addPlayer(nameController.text, selectedPos, stats);
-                  
+                      .addPlayer(
+                        nameController.text,
+                        selectedPos,
+                        nationalityController.text,
+                        heightValue,
+                        selectedFoot,
+                        stats,
+                      );
                   nameController.clear();
-                  setState(() => selectedPos = 'MC');
-                  
+                  nationalityController.clear();
+                  heightController.clear();
+                  setState(() {
+                    selectedPos = 'MC';
+                    selectedFoot = 'Ambos';
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Jugador Guardado Exitosamente")),
                   );
@@ -371,6 +452,8 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("StatsPRO"),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(

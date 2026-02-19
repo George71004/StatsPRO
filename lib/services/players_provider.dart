@@ -86,11 +86,14 @@ class PlayersProvider extends ChangeNotifier {
   }
 
   // Agregar Jugador (Create)
-  void addPlayer(String name, String pos, Map<String, int> stats) {
+  void addPlayer(String name, String pos, String nac, double hei, String pref, Map<String, int> stats) {
     _players.add(Player(
       id: const Uuid().v4(),
       name: name,
       position: pos,
+      nationality: nac,
+      height: hei,
+      preferredFoot: pref,
       vel: stats['vel']!, acc: stats['acc']!, fon: stats['fon']!,
       pot: stats['pot']!, con: stats['con']!, pas: stats['pas']!,
       dis: stats['dis']!, ent: stats['ent']!,
