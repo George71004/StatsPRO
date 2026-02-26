@@ -30,6 +30,11 @@ class Player {
   int get totalStats => vel + acc + fon + pot + con + pas + dis + ent;
   int get promedio => (totalStats / 8).round();
 
+  Map<String, int> get stats => {
+    'vel': vel, 'acc': acc, 'fon': fon, 'pot': pot,
+    'con': con, 'pas': pas, 'dis': dis, 'ent': ent,
+  };
+
   Map<String, dynamic> toJson() => {
     'id': id, 'name': name, 'position': position,
     'height': height, 'preferredFoot': preferredFoot, 'nationality': nationality,

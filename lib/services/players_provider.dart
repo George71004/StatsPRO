@@ -20,6 +20,8 @@ class PlayersProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
   bool isLoading = true;
 
+  List<Player> get fullPlayers => _players;
+
   List<Player> get players {
     List<Player> filteredList = _players.where((p) {
       bool matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase());

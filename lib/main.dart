@@ -5,6 +5,7 @@ import './services/players_provider.dart';
 import './models/player_model.dart';
 import './views/compare_view.dart';
 import './views/settings_view.dart';
+import './views/best_eleven_view.dart';
 
 void main() {
   runApp(
@@ -440,6 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     const PlayersListView(),
+    const BestElevenView(),
     const CompareView(),
     const CreatePlayerView(),
     const SettingsView(),
@@ -461,6 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onDestinationSelected: (int index) => setState(() => _selectedIndex = index),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.groups), label: 'Jugadores'),
+          NavigationDestination(icon: Icon(Icons.star), label: 'Mejor 11'),
           NavigationDestination(icon: Icon(Icons.compare), label: 'Comparar'),
           NavigationDestination(icon: Icon(Icons.person_add), label: 'Crear'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Ajustes'),
